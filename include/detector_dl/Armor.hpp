@@ -1,9 +1,12 @@
 #pragma once
 
-#include "opencv2/opencv.hpp"
-#include "bits/stdc++.h"
+#include <cmath>
+#include <string>
+#include <vector>
+#include <opencv2/opencv.hpp>
 
-enum ArmorType // 装甲板类型（confirm in detector.hpp，pnp解算的时候用））
+// 装甲板类型（confirm in detector.hpp，pnp解算的时候用）
+enum ArmorType
 {
     SMALL,
     LARGE
@@ -12,33 +15,16 @@ enum ArmorType // 装甲板类型（confirm in detector.hpp，pnp解算的时候
 class Armor
 {
 public:
+    // 装甲板四顶点，opencv亚像素坐标下的左上，左下，右下，右上
+    std::vector<cv::Point2f> armorVertices_vector;
     cv::Point2f center;
+    float area;
     ArmorType type;
-    double area;
-    std::vector<cv::Point2f> armorVertices_vector; // 装甲板的四个顶点 bl->tl->tr->br(向量形式) 左下 左上 右上 右下
     std::string number;
-
-public:
-    Armor() = default;
-
-    Armor(std::vector<cv::Point2f> points) : Armor()
+    Armor(const std::vector<cv::Point2f> &points)
+        : armorVertices_vector(points),
+          center((points[0] + points[2]) / 2),
+          area(std::abs((points[0].x - points[2].x) * (points[0].y - points[2].y)))
     {
-        this->armorVertices_vector = points;
-        CalCenter(this->armorVertices_vector[0], this->armorVertices_vector[1], 
-                  this->armorVertices_vector[2], this->armorVertices_vector[3]);        
-    }
-
-    ~Armor() = default;
-
-public:
-    void CalCenter(const cv::Point2f &down_left, const cv::Point2f &upper_left, 
-                   const cv::Point2f &upper_right, const cv::Point2f &down_right)
-    {
-        // 灯条中心点相加再平分即为装甲板中心点
-        this->center.x = (upper_left.x + down_right.x) / 2;
-        this->center.y = (upper_left.y + down_right.y) / 2;
-
-        // 装甲板面积
-        this->area = (down_right.x-upper_left.x) * (upper_left.y - down_right.y);//后面pnp解算要用（优先攻击面积大的）
     }
 };

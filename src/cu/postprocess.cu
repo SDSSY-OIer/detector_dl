@@ -4,8 +4,8 @@
 static __device__ void affine_project(float *matrix, float x, float y, float *ox, float *oy);
 
 static __global__ void decode_kernel(
-    float *predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes, 
-    int ckpt, float confidence_threshold, float *invert_affine_matrix, 
+    float *predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes,
+    int ckpt, float confidence_threshold, float *invert_affine_matrix,
     float *parray, int max_objects);
 
 static __device__ float box_iou(
@@ -14,29 +14,28 @@ static __device__ float box_iou(
 
 static __global__ void nms_kernel(float *bboxes, int max_objects, float threshold, int NUM_BOX_ELEMENT);
 
-
 void decode_kernel_invoker(
-    float* predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes,
-    int ckpt, float confidence_threshold, float* invert_affine_matrix, 
-    float* parray, int max_objects, cudaStream_t stream)
+    float *predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes,
+    int ckpt, float confidence_threshold, float *invert_affine_matrix,
+    float *parray, int max_objects, cudaStream_t stream)
 {
     // int block = 256;
-    // int  grid =  ceil(num_bboxes / (float)block);
+    // int grid = ceil(num_bboxes / (float)block);
     dim3 dimblock(256, 1, 1);
-    dim3 dimgird((num_bboxes + dimblock.x - 1)/dimblock.x, 1, 1);
-        
+    dim3 dimgird((num_bboxes + dimblock.x - 1) / dimblock.x, 1, 1);
+
     decode_kernel<<<dimgird, dimblock, 0, stream>>>(
         predict, NUM_BOX_ELEMENT, num_bboxes, num_classes,
-        ckpt, confidence_threshold, invert_affine_matrix, 
+        ckpt, confidence_threshold, invert_affine_matrix,
         parray, max_objects);
 }
 
-void nms_kernel_invoker(float* parray, float nms_threshold, int max_objects, cudaStream_t stream,int NUM_BOX_ELEMENT)
-{       
-    int block = max_objects<256? max_objects:256;
+void nms_kernel_invoker(float *parray, float nms_threshold, int max_objects, cudaStream_t stream, int NUM_BOX_ELEMENT)
+{
+    int block = max_objects < 256 ? max_objects : 256;
     int grid = ceil(max_objects / (float)block);
     // int grid = 32;
-    nms_kernel<<<grid, block, 0, stream>>>(parray, max_objects, nms_threshold,NUM_BOX_ELEMENT);
+    nms_kernel<<<grid, block, 0, stream>>>(parray, max_objects, nms_threshold, NUM_BOX_ELEMENT);
 }
 
 static __device__ void affine_project(float *matrix, float x, float y, float *ox, float *oy)
@@ -46,8 +45,8 @@ static __device__ void affine_project(float *matrix, float x, float y, float *ox
 }
 
 static __global__ void decode_kernel(
-    float *predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes, 
-    int ckpt, float confidence_threshold, float *invert_affine_matrix, 
+    float *predict, int NUM_BOX_ELEMENT, int num_bboxes, int num_classes,
+    int ckpt, float confidence_threshold, float *invert_affine_matrix,
     float *parray, int max_objects)
 {
     int position = blockDim.x * blockIdx.x + threadIdx.x;
@@ -55,8 +54,8 @@ static __global__ void decode_kernel(
         return;
 
     float *pitem = predict + (5 + num_classes + ckpt * 2) * position;
-// v7: cx, cy, w, h, conf, x1, y1, conf1, x2, y2, conf2, x3, y3, conf3, x4, y4, conf4, conf_c1...conf_c36
-// v5: cx, cy, w, h, conf, x1, y1, x2, y2, x3, y3, x4, y4, conf_c1...conf_c36
+    // v7: cx, cy, w, h, conf, x1, y1, conf1, x2, y2, conf2, x3, y3, conf3, x4, y4, conf4, conf_c1...conf_c36
+    // v5: cx, cy, w, h, conf, x1, y1, x2, y2, x3, y3, x4, y4, conf_c1...conf_c36
     float objectness = pitem[4];
     if (objectness < confidence_threshold)
         return;

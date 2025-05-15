@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.8)
-set(CMAKE_CXX_STANDARD 17)
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_CXX_STANDARD 20)
 project(detector_dl)
 add_definitions(-w)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -89,5 +89,3 @@ install(TARGETS
 ament_auto_package(
   INSTALL_TO_SHARE
 )
-
-
